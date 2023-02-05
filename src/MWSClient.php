@@ -379,40 +379,18 @@ class MWSClient{
      * @param object DateTime $till, end of time frame
      * @return array
      */
-    public function ListOrders(DateTime $from, $allMarketplaces = false, $states = [
-        'Unshipped', 'PartiallyShipped'
-    ], $FulfillmentChannels = 'MFN', DateTime $till = null)
+    public function ListOrders(DateTime $from, $allMarketplaces = false)
     {
         $query = [
             'CreatedAfter' => gmdate(self::DATE_FORMAT, $from->getTimestamp())
         ];
 
-        if ($till !== null) {
-          $query['CreatedBefore'] = gmdate(self::DATE_FORMAT, $till->getTimestamp());
-        }
-
-        $counter = 1;
-        foreach ($states as $status) {
-            $query['OrderStatus.Status.' . $counter] = $status;
-            $counter = $counter + 1;
-        }
-
         if ($allMarketplaces == true) {
             $counter = 1;
-            foreach($this->MarketplaceIds as $key => $value) {
+            foreach ($this->MarketplaceIds as $key => $value) {
                 $query['MarketplaceId.Id.' . $counter] = $key;
                 $counter = $counter + 1;
             }
-        }
-
-        if (is_array($FulfillmentChannels)) {
-            $counter = 1;
-            foreach ($FulfillmentChannels as $fulfillmentChannel) {
-                $query['FulfillmentChannel.Channel.' . $counter] = $fulfillmentChannel;
-                $counter = $counter + 1;
-            }
-        } else {
-            $query['FulfillmentChannel.Channel.1'] = $FulfillmentChannels;
         }
 
         $response = $this->request('ListOrders', $query);
@@ -423,15 +401,14 @@ class MWSClient{
                 $data['NextToken'] = $response['ListOrdersResult']['NextToken'];
                 return $data;
             }
-        
+
             $response = $response['ListOrdersResult']['Orders']['Order'];
-        
+
             if (array_keys($response) !== range(0, count($response) - 1)) {
-                return [$response];
+                return ["ListOrders" => $response];
             }
-        
-            return $response;
-        
+
+            return ["ListOrders" => $response];
         } else {
             return [];
         }
@@ -460,9 +437,10 @@ class MWSClient{
             $response = $response['ListOrdersByNextTokenResult']['Orders']['Order'];
 
             if (array_keys($response) !== range(0, count($response) - 1)) {
-                return [$response];
+                return ["ListOrders" => $response];
             }
-            return $response;
+
+            return ["ListOrders" => $response];
         } else {
             return [];
         }
